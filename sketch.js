@@ -4,7 +4,7 @@ let dropdown;
 let selectedSeason = "2023"; // Default season
 
 function setup() {
-  createCanvas(1200, 500);  // Increased canvas width for better spacing
+  createCanvas(1200, 500); // Increased canvas width for better spacing
   textAlign(CENTER, CENTER);
 
   // Embed CSV data for multiple seasons
@@ -40,25 +40,26 @@ Nikola Jokić,7.0,2021
 Jayson Tatum,6.7,2021
 Kawhi Leonard,6.5,2021`;
 
-  // Parse the CSV data
+
   data = createCSV(csvData);
 
-  // Extract unique seasons and create a dropdown
+  
   let seasons = [...new Set(data.getColumn("Season"))];
   dropdown = createSelect();
   dropdown.position(10, 10);
   seasons.forEach(season => dropdown.option(season));
   dropdown.changed(updateData);
 
-  barGraph = new BarGraph(50, 80, width - 100, height - 150); // Create BarGraph instance
-  updateData(); // Initial data
+ 
+  barGraph = new BarGraph(50, 80, width - 100, height - 150);
+  updateData(); // Load initial data
 }
 
 function updateData() {
   selectedSeason = dropdown.value();
   let players = [];
 
-  // Filter data for selected season of top 10 BPM players
+  
   for (let i = 0; i < data.getRowCount(); i++) {
     if (data.getString(i, "Season") === selectedSeason) {
       players.push({
@@ -69,9 +70,9 @@ function updateData() {
   }
 
   players.sort((a, b) => b.bpm - a.bpm); // Sort by BPM
-  players = players.slice(0, 10); // Top 10
+  players = players.slice(0, 10); // Top 10 players
 
-  barGraph.setData(players); // Data in BarGraph
+  barGraph.setData(players); // Update graph with new data
 }
 
 function draw() {
@@ -79,10 +80,9 @@ function draw() {
   fill(255);
   textSize(18);
   text(`Top 10 NBA BPM Players (${selectedSeason})`, width / 2, 50);
-  barGraph.draw(); // Draw the graph
+  barGraph.draw(); // the updated graph
 }
 
-// BarGraph class definition
 class BarGraph {
   constructor(x, y, w, h) {
     this.x = x;
@@ -90,34 +90,50 @@ class BarGraph {
     this.w = w;
     this.h = h;
     this.data = [];
+    this.maxBPM = 1;
+  }
+
+  addData(label, value) {
+    this.data.push({ name: label, bpm: value });
+    this.updateScaling();
   }
 
   setData(data) {
     this.data = data;
+    this.updateScaling();
+  }
+
+  updateScaling() {
+    if (this.data.length > 0) {
+      this.maxBPM = max(this.data.map(d => d.bpm)); 
+    } else {
+      this.maxBPM = 1;
+    }
   }
 
   draw() {
     if (this.data.length === 0) return;
 
-    let barWidth = this.w / this.data.length - 25; // Adjust bar width for better spacing
-
+    let barWidth = this.w / this.data.length - 25; 
     for (let i = 0; i < this.data.length; i++) {
-      let x = this.x + i * (barWidth + 25); // Increase spacing between bars
+      let x = this.x + i * (barWidth + 25);
       let y = this.y + this.h;
-      let barHeight = map(this.data[i].bpm, 0, 15, 0, this.h);
+      let barHeight = map(this.data[i].bpm, 0, this.maxBPM, 0, this.h); // Scale bars dynamically
 
-      // Bars
+      // Draw bars
       fill(0, 102, 204);
       rect(x, y - barHeight, barWidth, barHeight);
 
-      // Making sure they don't overlap
+      // Player names
       fill(255);
       textSize(12);
-      text(this.data[i].name, x + barWidth / 2, this.y + this.h + 40); // Spacing
+      text(this.data[i].name, x + barWidth / 2, this.y + this.h + 40); // Prevent overlap
 
-      // Look at data hovering
+      // Tooltip for hover
       if (mouseX > x && mouseX < x + barWidth && mouseY > y - barHeight && mouseY < y) {
-        fill(255, 200);
+        fill(0, 0, 0, 180);
+        rect(mouseX - 30, mouseY - 25, 80, 20, 5); // Tooltip background
+        fill(255);
         textSize(14);
         text(`${this.data[i].name}: ${this.data[i].bpm.toFixed(1)}`, mouseX, mouseY - 10);
       }
@@ -125,18 +141,17 @@ class BarGraph {
   }
 }
 
-// Loading CSV from a string
 function createCSV(csvData) {
   let table = new p5.Table();
   let rows = csvData.split('\n');
   let headers = rows[0].split(',');
 
-  // Headers to the table
+  
   for (let header of headers) {
     table.addColumn(header);
   }
 
-  // Rows to the table
+
   for (let i = 1; i < rows.length; i++) {
     let row = rows[i].split(',');
     let newRow = table.addRow();
@@ -147,4 +162,3 @@ function createCSV(csvData) {
 
   return table;
 }
-
